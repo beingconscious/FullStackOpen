@@ -1,17 +1,15 @@
   import React , { useState } from 'react'
-  import Note from './components/Note'
+  import Person from './components/Person'
+  import Filter from './components/Filter'
+  import PersonForm from './components/PersonForm'
 
-  const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ])
+
+const App = () => { 
+
+  const [persons, setPersons] = useState([])
   const [ newName , setNewName ] = useState ( '' )
   const [newPhoneNum,setNewPhoneNum] = useState ( '' )
   const [filterText,setFilterText] = useState ( '' )
-
 
   const add = (event) => {
     event.preventDefault()
@@ -32,25 +30,20 @@
     else alert(`${newName} already exists`)
   }
   
-  const handleFilterText  = (event) =>{
-    setFilterText(event.target.value)
-    let temp =filteredCharacters(persons)
-    console.log(temp)
-  }
-
-  function filteredCharacters(p) {
-    return p.filter(person => {
-       const ret =person.name.toLowerCase().includes(filterText)
-       console.log(filterText)
-       return ret 
-      }
-    )
-  }
+  const filteredPersons = filterText.length === 0 ? persons :
+  persons.filter(person =>
+    {
+      const ret = person.name.toLowerCase().includes(filterText)
+      console.log(filterText);console.log(ret)
+      return ret
+    }
+  ) 
+  
+  console.log(filteredPersons)
 
   const handleNewPhoneNum  = (event) =>{
     setNewPhoneNum(event.target.value)
   }
-
   const handleNewName  = (event) =>{
     setNewName(event.target.value)
   }
@@ -59,41 +52,34 @@
     <div>
       <h2>Phonebook</h2>
       <div>
-          filter shown with: 
-          <input
-           value = {filterText}
-           onChange ={handleFilterText}
-          />
+        filter shown with: 
+        <Filter
+         value = {filterText}
+         onChange ={e => setFilterText(e.target.value)}
+        />
       </div>
       <h2>add a new</h2>
-      <form onSubmit = {add}>
-        <div>
-          name: 
-          <input
-           value = {newName}
-           onChange ={handleNewName}
-           type = "text"
-           // key = {}
-          />
-        </div>
-        <div>
-          number: 
-          <input
-           value = {newPhoneNum}
-           onChange ={handleNewPhoneNum}
-          />
-        </div>
-        <div>
-          <button type="submit" >add</button>
-        </div>
-      </form>
+      <PersonForm 
+        onSubmit = {add}
+        valueName = {newName}
+        onChangeName = {handleNewName}
+        valueNum = {newPhoneNum}
+        onChangeNum = {handleNewPhoneNum}
+      />
+       
       <h2>Numbers</h2>
-      <ul>
-        {persons.map(person =>
-         <Note key= {person.id} name = {person.name} number = {person.phone} />)}
-      </ul>
-      
+        {
+          filteredPersons.map(person =>
+            <Person
+             key= {person.id}
+             name = {person.name}
+             number = {person.number}
+            />
+          )
+        }    
     </div>
   )
 }
+
+
 export default App
