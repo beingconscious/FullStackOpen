@@ -6,7 +6,7 @@
 			return null
 		}
 
-if (message.includes('ERROR')){
+if (message.includes('error')){
 			return(
 				<div className = "error">
 					{ message }

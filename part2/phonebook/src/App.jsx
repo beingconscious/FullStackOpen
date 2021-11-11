@@ -43,7 +43,7 @@ const App = () => {
 					},  5000)
 				})
 				.catch( error => {
-					setMessage( `[ERROR] ${updatedPerson.name} was already deleted` )
+					setMessage( `[error] ${updatedPerson.name} was already deleted` )
 					setTimeout( () => {
 						setMessage( null )
 					},  5000)
