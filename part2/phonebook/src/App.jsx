@@ -1,120 +1,126 @@
-  import React,{ useState, useEffect } from 'react'
-  import Person from './components/Person'
-  import Filter from './components/Filter'
-  import PersonForm from './components/PersonForm'
-  import phoneBookService from './services/phonebook'
+	import React,{ useState, useEffect } from 'react'
+	import Person from './components/Person'
+	import Filter from './components/Filter'
+	import PersonForm from './components/PersonForm'
+	import Notification from './components/Notification'
+	import phoneService from './services/phonebook'
 
 
 const App = () => { 
 
-  const [ persons, setPersons ] = useState( [] )
-  const [ newName , setNewName ] = useState ( '' )
-  const [ newPhoneNum, setNewPhoneNum ] = useState ( '' )
-  const [ filterText, setFilterText ] = useState ( '' )
+	const [ allPersons, setAllPersons ] = useState( [] )
+	const [ name , setName ] = useState ( '' )
+	const [ phone, setPhone ] = useState ( '' )
+	const [ filterText, setFilterText ] = useState ( '' )
+	const [ message, setMessage ] = useState( null )
 
-  const hook = () => {
-    phoneBookService
-      .getAll()
-      .then( initialNumbers => {
-        setPersons(initialNumbers)
-      })
-  }
-  useEffect(hook,[])
+	const hook = () => {
+		phoneService.getAll().then( initialNumbers => {
+			setAllPersons(initialNumbers)
+		})
+	}
+	useEffect( hook,[] )
 
-  console.log(persons)
+	// console.log(allPersons)
 
-  const add = event => {
-    event.preventDefault()
-      
-    const personPresent = persons.filter( person => person.name === newName)
-    console.log( personPresent )
-    const nameObject = {
-        name: newName,
-        number: newPhoneNum,
-      }
-    
-    if( personPresent.length < 1){
-      
-      //saving new number to backend server.
-      phoneBookService
-        .create( nameObject )
-        .then( returnedPerson => {
-          setPersons( persons.concat( returnedPerson))
-          setNewName( '' )
-          setNewPhoneNum( '' )
-        })
-    }
-    else {
-      let result = window.confirm( `${newName} is already added to the phonebook, replace the old number with a new one` )
-      const id = personPresent[0].id
-      if( result ) {
-        phoneBookService
-          .update( id , nameObject )
-          .then( returnedPerson  => {
-            setPersons( persons.map( person =>
-             person.id !== id ? person : returnedPerson ))
-          })
-          .catch( error => console.error(error))
-      }
-    }
-  }
+	const addHandle = event => {
+		event.preventDefault()
+		const person = allPersons.filter( p => p.name === name)
+		const personToAdd = person[0]
+		const updatedPerson = {
+			...personToAdd,
+			number: phone,
+		}
 
-  const removePerson = id => {
-    const person = persons.find( p => p.id === id )
-    let result = window.confirm( `delete ${person.name}?` )
-      if( result ){
-        phoneBookService
-          .remove(id)
-          .then( setPersons(persons.filter( p => p.id !== id)) )
-          .catch( error => alert( `${person.name} was already deleted from the server`))
-      }
-  }
-  
-  const filteredPersons = filterText.length === 0 ? persons :
-    persons.filter( person => person.name.toLowerCase().includes(filterText)) 
-  
-  console.log(filteredPersons)
+		if( person.length !== 0 ){
+			const id = person[0].id
+			if ( window.confirm( `${personToAdd.name} is already present, replace the old no with a new one` ) ) {
+				phoneService.update( id , updatedPerson ).then( rtp  => {
+					setAllPersons( allPersons.map( p => p.id !== id ? p : rtp ))
+					setMessage( `changed ${ rtp.name}'s number to ${ rtp.number }`  ) 
+					setTimeout( () => { 
+						setMessage( null )
+					},  5000)
+				})
+				.catch( error => {
+					setMessage( `[ERROR] ${updatedPerson.name} was already deleted` )
+					setTimeout( () => {
+						setMessage( null )
+					},  5000)
+				})
+			}
+		} else {
+				const updatedPerson = {
+					name: name,
+					number: phone,
+				}
+				phoneService.create( updatedPerson ).then( rtp => {
+				setAllPersons( allPersons.concat( rtp))
+				setName( '' )
+				setPhone( '' )
+				setMessage( `added ${ rtp.name}` ) 
+				setTimeout( () => {
+					setMessage( null )
+				},  5000)
+			})
+		}
+	}
 
-  const handleNewPhoneNum  = (event) =>{
-    setNewPhoneNum(event.target.value)
-  }
-  const handleNewName  = (event) =>{
-    setNewName(event.target.value)
-  }
+	console.log(message)
 
-  return (
-    <div>
-      <h2>Phonebook</h2>
-      <div>
-        filter shown with: 
-        <Filter
-         value = {filterText}
-         onChange ={ e => setFilterText(e.target.value)}
-        />
-      </div>
-      <h2>add a new</h2>
-      <PersonForm 
-        onSubmit = {add}
-        valueName = {newName}
-        onChangeName = {handleNewName}
-        valueNum = {newPhoneNum}
-        onChangeNum = {handleNewPhoneNum}
-      />
-       
-      <h2>Numbers</h2>
-        {
-          filteredPersons.map( person =>
-            <Person
-             name = {person.name}
-             number = {person.number}
-             id = {person.id}
-             removePerson = {removePerson}
-             key= {person.id}
-            />
-          )
-        }    
-    </div>
-  )
+	const removePerson = id =>  {
+		const person = allPersons.find( p => p.id === id )
+		if ( window.confirm( `delete ${person.name}?` )) {
+			phoneService
+			.remove(id)
+			.then( setAllPersons( allPersons.filter( p => p.id !== id)) )
+		}
+	}
+	 
+	const handleNewPhoneNum  = (event) => {
+		setPhone(event.target.value)
+	}
+	const handleNewName  = (event) => {
+		setName(event.target.value)
+	}
+
+	const filteredPersons = filterText.length === 0 ? allPersons :
+	 allPersons.filter( p => p.name.toLowerCase().includes(filterText))
+
+	return (
+		<div>
+			<h2>Phonebook</h2>
+			<Notification message = { message } />
+			<div>
+				filter shown with: 
+				<Filter
+					value = { filterText }
+					onChange ={ e => setFilterText(e.target.value)}
+				/>
+			</div>
+			<h2>add a new</h2>
+			<PersonForm 
+				onSubmit = {addHandle}
+				valueName = {name}
+				onChangeName = {handleNewName}
+				valueNum = {phone}
+				onChangeNum = {handleNewPhoneNum}
+			/>
+			 
+			<h2>Numbers</h2>
+			{
+				filteredPersons.map( p =>
+					<Person
+						name = {p.name}
+						number = {p.number}
+						id = {p.id}
+						removePerson = {removePerson}
+						key= {p.id}
+					/>
+				)
+			}    
+		</div>
+	)
 }
 
 
